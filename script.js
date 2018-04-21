@@ -5,7 +5,7 @@ const createNode = ({ x, y, fill }) => {
     .append('rect')
     .datum({ x, y })
     .attr('class', 'node')
-    .attr('width', 200)
+    .attr('width', 150)
     .attr('height', 50)
     .attr('fill', fill)
     .attr('x', (d) => d.x)
@@ -21,14 +21,85 @@ const createNode = ({ x, y, fill }) => {
             .select(this)
             .attr('x', d.x)
             .attr('y', d.y)
+
+          updateLine({ sourceNode, targetNode })
         })
     )
 }
 
-const createConnection = ({ sourceNode: source, targetNode: target }) => {
-  console.log(source, target)
+const createCircle = (opts) => {
+  const { x, y } = opts
+  svg
+    .append('g')
+    .append('circle')
+    .attr('cx', x)
+    .attr('cy', y)
+    .attr('r', 10)
+    .attr('fill', 'blue')
+  return opts
 }
 
-const sourceNode = createNode({ fill: 'yellow', x: 200, y: 100, })
-const targetNode = createNode({ fill: 'red', x: 200, y: 400, })
+const createLine = (opts) => {
+  const { from, to } = opts
+  console.log(opts)
+  svg
+    .append('g')
+    .append('line')
+    .attr('x1', from.x)
+    .attr('y1', from.y)
+    .attr('x2', to.x)
+    .attr('y2', to.y)
+    .attr('fill', 'none')
+    .attr('stroke', 'red')
+    .attr('stroke-width', 2)
+  return opts
+}
+
+const updateLine = ({ sourceNode: source, targetNode: target }) => {
+  const sourceBox = source.node().getBBox()
+  const targetBox = target.node().getBBox()
+  const path = d3.path()
+  const offset = {
+    x: 25,
+    y: 25,
+  }
+  const sourceNew = {
+    x: sourceBox.x + sourceBox.width + offset.x,
+    y: sourceBox.y + sourceBox.height / 2,
+  }
+  const targetNew = {
+    ...offset,
+    x: targetBox.x - offset.x,
+    y: targetBox.y + targetBox.height / 2,
+  }
+  const middle = {
+    x: (sourceNew.x + targetNew.x) / 2,
+    y: (sourceNew.y + targetNew.y) / 2,
+  }
+
+  path.moveTo(sourceNew.x - offset.x, sourceNew.y)
+  path.lineTo(sourceNew.x, sourceNew.y)
+  path.bezierCurveTo(middle.x, sourceNew.y, middle.x, targetNew.y, targetNew.x, targetNew.y)
+  path.lineTo(targetNew.x + offset.x, targetNew.y)
+
+  svg
+    .select('.line')
+    .attr('class', 'line')
+    .attr('d', path.toString())
+
+  return path
+}
+
+const createConnection = (opts) => {
+  const path = updateLine(opts)
+
+  svg
+    .append('g')
+    .append('path')
+    .attr('class', 'line')
+    .attr('d', path.toString())
+}
+
+const sourceNode = createNode({ fill: 'yellow', x: 50, y: 100, })
+const targetNode = createNode({ fill: 'red', x: 550, y: 250, })
 const connect = createConnection({ sourceNode, targetNode, })
